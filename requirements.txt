@@ -1,0 +1,9 @@
+# @file: requirements.txt - for simple Django project using default SQLite3 DB.
+Bio
+Django
+ncbi-acc-download
+# nose2
+# more_itertools
+# numpy
+# pytest
+# sortedcontainers

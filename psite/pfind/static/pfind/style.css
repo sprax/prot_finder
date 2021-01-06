@@ -1,0 +1,9 @@
+/* @file: style.css */
+
+li a {
+    color: green;
+}
+
+#grad {
+  background-image: linear-gradient(to right, red , yellow);
+}

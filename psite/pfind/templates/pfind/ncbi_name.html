@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Protein by NCBI Name</title>
+</head>
+
+<body>
+
+    <h1>{{ protein.ncbi_name }}</h1>
+    <p>{{ protein.acgt_text }}</p>
+
+    {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+
+</body>
+
+</html>

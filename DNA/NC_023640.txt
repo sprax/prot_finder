@@ -1,0 +1,4 @@
+NCBI Reference Sequence: NC_023640.1 (click to see this obsolete version)
+This sequence has been replaced by NC_016072.
+But NC_016072 is empty between ORIGIN and //.
+See https://www.ncbi.nlm.nih.gov/nuccore/NC_016072

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+<title>Protein Search</title>
+<style>
+body { font-size: 14px; font-family: Monospace; }
+
+* {
+  box-sizing: border-box;
+}
+
+.row {
+  display: flex;
+  margin-left:-5px;
+  margin-right:-5px;
+}
+
+/**
+Three tables as side-by-side columns reduces tearing from AJAX results.
+REACT could also prevent that, but seems like overkill for this toy project.
+*/
+.column {
+  flex: 33%;        /* flex is OK with "acgtcaggatgatctccccccccccctccccgag" */
+  float: left;
+  /* width: 33%; */
+  /* width: 48ch;   /* Best with Monospace font family. */
+  padding: 5px;
+}
+
+/* Clearfix (clear floats) */
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+  border: 1px solid #ddd;
+}
+
+th, td {
+  text-align: left;
+  padding: 12px;
+  width: 12ch;      /* Best with Monospace font family. */
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+#search {
+    font-size: 16px;
+    width: 14em;  height: 2em;
+}
+
+</style>
+</head>
+<body>
+
+<h1>Protein Finder</h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form method="POST" action="">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit" id="search" value="Search">
+</form>
+
+<!-- ================================================== -->
+{% block javascript %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js">
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        var username = "{{username}}";
+        var max_find = "{{max_find}}";
+        var acgt_str = "{{acgt_str}}";
+        var name_ord = "{{name_ord}}";
+        if (username.length > 1 && acgt_str.length > 1) {
+            $.ajax({
+                // data: JSON.stringify({ username: {{username}} }),
+                data: {
+                    'username': username,
+                    'acgt_str': acgt_str,
+                    'max_find': max_find,
+                    'name_ord': name_ord,
+                },
+                type: $(this).attr('method'), // GET or POST
+                url: "{% url 'pfind:json_find_and_update' %}",
+
+                dataType: 'json',
+                success: function(data) {
+                    let size = data.find_res.length;
+                    let secs = data.dur_secs;
+                    let caption = `Found ${size} of max ${max_find} \
+                                   matches for "${acgt_str}" in ${secs}`
+                    document.getElementById("ajax_caption").innerHTML = caption
+                    // console.log("AJAX caption(" + caption + ")");
+
+                    let ajax_table = document.getElementById("ajax_table")
+                    if (size == 0) {
+                        ajax_table.style.display = "none"
+                    } else {
+                        ajax_table.style.display = "table"
+                        $.each(data.find_res, function(idx, elt) {
+                            // console.log(elt)
+                            $("#ajax_table tbody").append(
+                                '<tr><td><a href="/pfind/' +
+                                elt[0] + '/">' +
+                                elt[0] + '</a></td><td>' +
+                                elt[1] + '</td></tr>'
+                            );
+                        });
+                    }
+                }
+            });
+        } else {
+            let caption = "Submit a DNA sequence to find matching Proteins."
+            document.getElementById("ajax_caption").innerHTML = caption
+
+        }
+    });
+</script>
+{% endblock javascript %}
+<br>
+
+<div class="row">
+  <div class="column">
+    <h2> New Results: {{acgt_str}} </h2>
+    <p id=ajax_caption>
+    </p>
+    <!-- Always preview this table, even if empty, so set expectations. -->
+    <table id="ajax_table" border='1'>
+        <tr>
+            <th>NCBI Name</th>
+            <th>First Index</th>
+        </tr>
+    </table>
+
+    <br>
+  </div>
+
+  <div class="column">
+    <h2> Search History: {{username}} </h2>
+
+    {% if uhistory == "" %}
+    <p>No search history, yet.</p>
+    {% elif uhistory %}
+    <p>
+    {{hist_len}} of max {{max_hist}} searches shown for user "{{username}}"
+    </p>
+    <table>
+        <tr>
+            <th>NCBI Name</a></th>
+            <th>First Index</th>
+        </tr>
+        {% for search_term, num_found, max_found, result_pairs in uhistory %}
+            <tr>
+                <td colspan="2">
+                ({{num_found}}/{{max_found}}) {{ search_term }}
+                </td>
+            </tr>
+            {% for ncbi_name, found_idx in result_pairs %}
+            <tr>
+                <td><a href="/pfind/{{ ncbi_name }}/">{{ncbi_name}}</a></td>
+                <td>{{found_idx}}</td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+
+    {% else %}
+    <p>No search history found for user "{{username}}"</p>
+    {% endif %}
+  </div>
+
+  <div class="column">
+    <h2> Saved Results: {{acgt_str}} </h2>
+
+    {% if tres_len > 0 %}
+    <p>{{tres_len}} saved results for "{{acgt_str}}" from all users.</p>
+    <table>
+      <tr>
+          <th>NCBI Name</a></th>
+          <th>First Index</th>
+      </tr>
+      {% for ncbi_name, found_idx in term_res %}
+      <tr>
+          <td><a href="/pfind/{{ ncbi_name }}/">{{ncbi_name}}</a></td>
+          <td>{{found_idx}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    {% else %}
+    <p>No previously saved results for term "{{acgt_str}}"</p>
+    {% endif %}
+
+  </div>
+</div>
+
+</body>
+</html>
