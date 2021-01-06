@@ -40,17 +40,17 @@ Note that partial alignments, such as found using:
 
 are not supported by this site.
 
-## Punch List:
+### Punch List:
 
-- ~~Cookies to resume session ~~
-- Done: ~~Async find and page updates ~~
-    - Not found: ~~Use newer Django built-in or contrib ~~
-    - Done: ~~Use AJAX/JQuery if this newer stuff fails right out of the box, or, as it seems now, is not meant to replace AJAX all at once. ~~
-    - ~~Test using artificial delay. ~~
-- Nice To Have: Done: ~~Aggregate saved results from all users. ~~
-- Nice To Have: Not warrented now: ~~In-memory cache with warming and persistence. ~~
+- ~Cookies to resume session~
+- Done: ~Async find and page updates~
+    - Not found: ~Use newer Django built-in or contrib~
+    - Done: ~Use AJAX/JQuery if this newer stuff fails right out of the box, or, as it seems now, is not meant to replace AJAX all at once.~
+    - ~Test using artificial delay.~
+- Nice To Have: Done: ~Aggregate saved results from all users.~
+- Nice To Have: Not warrented now: ~In-memory cache with warming and persistence.~
 
-### Dev-ony NOTES for down in the weeds:
+### Dev-ony NOTES (down in the weeds):
 
 ```python
 >>> len([(s.id, s.term, s.date.minute, s.rcsv.split(',')) for s in Search.objects.filter(term__contains='gtca').order_by('user').distinct().reverse()])
@@ -68,7 +68,7 @@ The 8-letter admin password is not ezpass, but where it's used.
 4
 ```
 
-TODO @sprax: [Nice To Have] Cache previous searches in-memory and in DB.
+More nice-to-have's: [Nice To Have] Cache previous searches in-memory and in DB.
 - On server startup, load the cache from the DB.
 - If the search string is a key in the in-memory cache,
     retrieive that.
@@ -84,9 +84,9 @@ TODO @sprax: [Nice To Have] Cache previous searches in-memory and in DB.
         but for cleaner design/sepration of concerns.
         So: [ UserId | Query ]
 
-## More on saving/caching results from one or all users
+### More on saving/caching results from one or all users
 
-### Two main options -- parse and rewrite CTE results inside or outside the DB:
+#### Two main options -- parse and rewrite CTE results inside or outside the DB:
 
 1.  Using a View or Table: create the view with a selection such as
 
@@ -124,13 +124,13 @@ sqlite> SELECT term, GROUP_CONCAT(rcsv,',') FROM pfind_search WHERE
         EXISTS (SELECT pfs.term, instr(pfs.term, term) AS off FROM
         pfind_search AS pfs WHERE off > 0) GROUP BY term;
 
-### Long, concatenated results:
+#### Long, concatenated results:
 sqlite> select distinct term, GROUP_CONCAT(rcsv, ':') from pfind_search
         where exists (select distinct pfs.term from pfind_search AS pfs
         where instr(pfs.term, term) > 0) group by term limit 7;
 
 
-### ONE WAY (without creating permanent view of unique search terms):
+#### One Way (without creating permanent view of unique search terms):
 Use WITH-clause to create temporary table U of unique search terms
 from the whole Search table pfind_search as S;
 and for each U.term, find all previous matches of all terms of which
