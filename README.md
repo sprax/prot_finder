@@ -1,21 +1,52 @@
 # Protein Finder
 
-Finds **exact** matches of DNA sequences (such as 'acgttgca') in a database of proteins.
+Web app that finds **exact** matches of DNA sequences (such as 'acgttgca') in a database of proteins.
 
+## Requirements, Installation, and Start Up in 5 Easy Steps
+
+1. Clone or download this repository and cd into its directory.
+2. Requires Python version 3.8 or greater, a recent version of Django, BioPython, and a not too-old web browser.
+    - If in doubt, run `pip install -r requirements.txt`, preferably inside a Python 3.9 virtual environment.
+    - System Reqs: This web app and scripts were tested on Mac/Darwin >= 19 and Ubuntu >= 18. 
+3. Go to the root of the psite app and run the server: `cd psite; python manage.py runserver`
+4. Direct your web browser to the URL in the expected output:
+```shell
+ . . .
+Django version 3.1.3, using settings 'psite.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CONTROL-C.
+```
+5. Fill out the form and hit the `Search` button.  
+    - The email address will be saved as the username in a cookie.
+    - Search History is tracked per user (including duplicate searches).
+    - Search Results are aggregated by search term; they are updated, never duplicated.
+    
 ## Form Inputs:
-DNA string, max number of matches, user email, and find/display order (name order v. random)
+DNA string, max number of matches, user email, and find/display order (name order v. random).
 
 ## Output Tables:
 - New Results: matches found from just-submitted form.  
-    - A match comprises an NCBI Protein name and the zero-base offset of the first known occurence of the search term.
+    - A match comprises an NCBI Protein name (accession ID) and the zero-base offset of the first known occurence of the search term.
 - User Search History: previous searches by the same user, shown in reverse chronological order.
 - Saved Term Results: previous search results for the current search term, aggregated from all user's searches, always shown in NCIB-name order.
     - Saved results include substring matches: If 'acgtacgt' was found at offset X, then the substring 'tacg' was found at offset X + 3.
     - Any offset shown is the smallest known.  A later search for the substring may find a smaller offset.
 
-Each new search is asynchronous, so the "New" results dispplayed are those most recently returned, not necessary those of the most recently submitted search.  If one search is leap-frogged by another, its results show up in the Search History and Saved Resulta tables rather than in New Results.
+### Asynchronous vs. Synchronous Behavior
 
-Users are identified by email only, which is stored in a cookie for session continuity.  There are no User passwords.  The Admin password is an 8-letter local name for I-90 in PascalCase.
+- Each new search is performed asynchronously, starting when the form page is reloaded (on document ready).
+- Database queries on search history and results are synchronous, completed before the form page reloads.
+
+Thus the "New" results displayed are those from the most recently submitted search, not necessarily from the most recently completed search.
+They are consistent with the form data displayed when the page was reloaded -- so the new result matches the displayed search term, limit, and order.
+If one search is leap-frogged by another, its results show up in the Search History and Saved Resulta tables rather than in New Results.
+To make this clear, the heading displayed over each table includes the search term or username.
+
+### Administration and Authentication
+
+Users are identified by email only, which is stored in a cookie for session continuity.
+There are no User passwords.  
+The Admin password is an 8-letter local name for I-90 in PascalCase.
 
 ## Protein Data Source
 
@@ -26,10 +57,12 @@ Example:
 ```shell
 ncbi-acc-download NC_027867 --format fasta -v
 ```
-Then it is easy to use a shell command such as sed, or an editor such as vim,
-to convert the downloaed text into a single string containing only lowercase
+Then it was easy to use a shell command such as sed, or an editor such as vim,
+to convert the downloaded text into a single string containing only lowercase
 letters 'a', 'c', 'g', 't', or in some cases 'n' (to wit, from NC_008724 and
-NC_023640).
+NC_023640).  
+Some of these were saved as the `*.raw` files in the DNA directory 
+before they were added to the SQLite3 DB.
 
 ## Notes
 
@@ -38,7 +71,7 @@ Note that partial alignments, such as found using:
     from Bio.Seq import Seq
     alignments = Bio.pairwise2.align.globalxx(Seq("ACGTTGCA"), protein_seq)
 
-are not supported by this site.
+are not supported by this web app.
 
 ### Punch List:
 
@@ -51,15 +84,6 @@ are not supported by this site.
 - Nice To Have: Not warrented now: ~In-memory cache with warming and persistence.~
 
 ### Dev-ony NOTES (down in the weeds):
-
-```python
->>> len([(s.id, s.term, s.date.minute, s.rcsv.split(',')) for s in Search.objects.filter(term__contains='gtca').order_by('user').distinct().reverse()])
-8
->>> len([(s.id, s.term, s.date.minute, s.rcsv.split(',')) for s in Search.objects.filter(term__contains='ggtca').order_by('user').distinct().reverse()])
-4
-```
-
-The 8-letter admin password is not ezpass, but where it's used.
 
 ```python
 >>> len([(s.id, s.term, s.date.minute, s.rcsv.split(',')) for s in Search.objects.filter(term__contains='gtca').order_by('user').distinct().reverse()])
@@ -86,7 +110,7 @@ More nice-to-have's: [Nice To Have] Cache previous searches in-memory and in DB.
 
 ### More on saving/caching results from one or all users
 
-#### Two main options -- parse and rewrite CTE results inside or outside the DB:
+#### To parse and rewrite CTE results inside or outside the DB?
 
 1.  Using a View or Table: create the view with a selection such as
 
@@ -128,7 +152,6 @@ sqlite> SELECT term, GROUP_CONCAT(rcsv,',') FROM pfind_search WHERE
 sqlite> select distinct term, GROUP_CONCAT(rcsv, ':') from pfind_search
         where exists (select distinct pfs.term from pfind_search AS pfs
         where instr(pfs.term, term) > 0) group by term limit 7;
-
 
 #### One Way (without creating permanent view of unique search terms):
 Use WITH-clause to create temporary table U of unique search terms
