@@ -39,8 +39,12 @@ DNA string, max number of matches, user email, and find/display order (name orde
 
 Thus the "New" results displayed are those from the most recently submitted search, not necessarily from the most recently completed search.
 They are consistent with the form data displayed when the page was reloaded -- so the new result matches the displayed search term, limit, and order.
-If one search is leap-frogged by another, its results show up in the Search History and Saved Resulta tables rather than in New Results.
+If one search is leapfrogged by another, its results show up in the Search History and Saved Resulta tables rather than in New Results.
 To make this clear, the heading displayed over each table includes the search term or username.
+
+Another consequence of this scheme is that the latest entries in the Search History and Saved Results tables 
+do not include any current search or result in the New Results table.  
+In the absence of leapfrogging, these entries will lag the new search by one submission.
 
 ### Administration and Authentication
 
