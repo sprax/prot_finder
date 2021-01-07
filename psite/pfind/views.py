@@ -12,34 +12,34 @@ found_idx: Smallest offset index found (so far) for a search term per Protein.
         but 'tacg' might also be found at a smaller offset later, by a
         different search.
 '''
+# import json
+# import simplejson
+import bisect
+import collections
+import math
+import time
+# from pprint import pprint
+# from pdb import set_trace
+from typing import Deque, Dict, List, Set, Tuple
+
 from asgiref.sync import sync_to_async
 from django.contrib.auth.models import User
 # from django.core import serializers
 from django.db import IntegrityError
-from django.db.models import Count, Value
+from django.db.models import Value
 from django.db.models.functions import StrIndex
-# from django.forms.models import model_to_dict
-from django.http import Http404
-from django.http import HttpResponse
+# from django.http import HttpResponse
 # from django.http import HttpResponseRedirect
-from django.http import JsonResponse
+# from django.forms.models import model_to_dict
+from django.http import Http404, JsonResponse
 # from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 # from django.urls import reverse
 from django.utils import timezone
 from django.views import generic
 
-from .models import Protein, Result, Search, UserSearch
 from .forms import ProtFindForm
-
-# import json
-# import simplejson
-import bisect
-import collections
-import math
-from pprint import pprint
-import time
-from typing import Deque, Dict, List, Set, Tuple
+from .models import Protein, Result, Search, UserSearch
 
 
 def make_pairs(flat_list: List) -> List[Tuple]:
@@ -123,7 +123,8 @@ def updated_or_created_term_result(acgt_str: str,
             toks = rcsv.split(",")
             indx = int(qres['indx'])
             for ncbi_name, found_idx in zip(toks[0::2], toks[1::2]):
-                hitmap[ncbi_name] = min(hitmap[ncbi_name], int(found_idx) + indx)
+                hitmap[ncbi_name] = min(hitmap[ncbi_name],
+                                        int(found_idx) + indx)
 
     # List of the usual pairs (PName, MinIndex):
     pairs = [(name, hitmap[name]) for name in sorted(hitmap.keys())]
@@ -258,7 +259,8 @@ def dict_find_and_update(user: User,
 
     beg_time = time.perf_counter()
     # Note that StrIndex, like Sqlite's INSTR, uses 1-based indexing.
-    ordered = 'pk' if name_ord else '?'
+
+    ordered = 'pk' if name_ord == 'True' else '?'  # type str, not bool
     find_res = (Protein.objects.annotate(
         found_idx=StrIndex('acgt_text', Value(acgt_str)) - 1)
         .filter(found_idx__gte=0)

@@ -34,8 +34,8 @@ class ProtFindForm(forms.Form):
         label='Ordered',
         initial=False,
         required=False,
-        help_text=("Find and show matches in name-sorted order "
-                   " v. random find order."))
+        help_text=("Find and show matches in name-sorted order;"
+                   " not in random order."))
 
     def clean_acgt_str(self):
         acgt_str = self.cleaned_data.get("acgt_str")
