@@ -34,8 +34,8 @@ class ProtFindForm(forms.Form):
         label='Ordered',
         initial=False,
         required=False,
-        help_text=("Find and show matches in name-sorted order "
-                   " v. random find order."))
+        help_text=("Find and show matches in name-sorted order;"
+                   " not in random order."))
 
     def clean_acgt_str(self):
         acgt_str = self.cleaned_data.get("acgt_str")
@@ -45,7 +45,7 @@ class ProtFindForm(forms.Form):
         return acgt_str
 
     def clean_max_find(self):
-        min_find = 1
+        min_find = 0
         max_find = self.cleaned_data.get("max_find")
         if max_find < min_find:
             raise forms.ValidationError(

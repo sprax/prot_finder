@@ -23,7 +23,9 @@
 {% if protein_list %}
     <ul>
     {% for protein in protein_list %}
-        <li><a href="/pfind/{{ protein.id }}/">{{ protein.ncbi_name }}</a></li>
+        <li>
+        <a href="/pfind/{{ protein.ncbi_name }}/">{{ protein.ncbi_name }}</a>
+        </li>
     {% endfor %}
     </ul>
 {% else %}
